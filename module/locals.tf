@@ -68,4 +68,40 @@ locals {
     for rp in try(data.nutanix_recovery_points_v2.existing[0].recovery_points, []) :
     rp.name => rp.ext_id if rp.name != null
   } : {}
+
+  # ---------------------------------------------------------------------------
+  # Factored output value expressions
+  #
+  # This larger output value is defined once here and referenced from both its
+  # individual `output` block and the aggregate `output "outputs"` (spec §7.6
+  # contract). Terraform cannot reference one output from another, so this local
+  # is the shared single source of truth. Behaviour is unchanged.
+  # ---------------------------------------------------------------------------
+
+  # Summary of PE protection/recovery resources (used by output "pe_summary").
+  out_pe_summary = {
+    clusters = {
+      total = length(data.nutanix_clusters_v2.clusters.cluster_entities)
+      names = [for cluster in data.nutanix_clusters_v2.clusters.cluster_entities : cluster.name]
+    }
+    protection_policies = {
+      total                       = length(nutanix_protection_policy_v2.policy)
+      sync_policies_count         = length(local.sync_protection_policies)
+      async_policies_count        = length(local.async_protection_policies)
+      linear_retention_count      = length(local.linear_retention_policies)
+      auto_rollup_retention_count = length(local.auto_rollup_retention_policies)
+    }
+    recovery_plans = {
+      total = length(nutanix_recovery_plan.plan)
+    }
+    recovery_points = {
+      total = length(nutanix_recovery_points_v2.recovery_point)
+    }
+    operations = {
+      replicates        = length(nutanix_recovery_point_replicate_v2.replicate)
+      restores          = length(nutanix_recovery_point_restore_v2.restore)
+      resource_restores = length(nutanix_restore_protected_resource_v2.restore_resource)
+      resource_promotes = length(nutanix_promote_protected_resource_v2.promote_resource)
+    }
+  }
 }

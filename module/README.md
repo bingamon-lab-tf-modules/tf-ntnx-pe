@@ -84,6 +84,7 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_outputs"></a> [outputs](#output\_outputs) | Aggregate of all module outputs (spec §7.6 contract, consumed by the landing zone as module.<x>.outputs). |
 | <a name="output_pe_summary"></a> [pe\_summary](#output\_pe\_summary) | Summary of Prism Element protection and recovery resources |
 | <a name="output_promote_protected_resources"></a> [promote\_protected\_resources](#output\_promote\_protected\_resources) | Promote protected resource operations (v2) |
 | <a name="output_protection_policies"></a> [protection\_policies](#output\_protection\_policies) | Protection policies (v2) created |
