@@ -40,11 +40,6 @@ locals {
     for k, v in nutanix_protection_policy_v2.policy : k => v.id
   }
 
-  # Map of protection rule names to their IDs for reference
-  protection_rule_ids = {
-    for k, v in nutanix_protection_rule.rule : k => v.id
-  }
-
   # Map of recovery plan names to their IDs for reference
   recovery_plan_ids = {
     for k, v in nutanix_recovery_plan.plan : k => v.id

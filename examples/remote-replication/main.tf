@@ -62,6 +62,12 @@ variable "dr_cluster_ext_id" {
   type        = string
 }
 
+variable "protected_category_ext_ids" {
+  description = "Prism Central category ext-ids to protect (v2 replacement for the legacy category_filter name/value params)"
+  type        = list(string)
+  default     = []
+}
+
 ################################################################################
 # Module
 ################################################################################
@@ -114,57 +120,11 @@ module "pe" {
           }
         }
       ]
-    }
-  }
 
-  # Protection rules for category-based protection
-  protection_rules = {
-    production-vms = {
-      name        = "protect-production-vms"
-      description = "Protection rule for production VMs"
-
-      ordered_availability_zone_list = [
-        {
-          cluster_uuid = var.primary_cluster_ext_id
-        },
-        {
-          cluster_uuid = var.dr_cluster_ext_id
-        }
-      ]
-
-      availability_zone_connectivity_list = [
-        {
-          source_availability_zone_index      = 0
-          destination_availability_zone_index = 1
-
-          snapshot_schedule_list = [
-            {
-              recovery_point_objective_secs = 3600
-              snapshot_type                 = "CRASH_CONSISTENT"
-
-              local_snapshot_retention_policy = {
-                num_snapshots = 24
-              }
-
-              remote_snapshot_retention_policy = {
-                num_snapshots = 48
-              }
-            }
-          ]
-        }
-      ]
-
-      category_filter = {
-        type      = "CATEGORIES_MATCH_ALL"
-        kind_list = ["vm"]
-
-        params = [
-          {
-            name   = "Environment"
-            values = ["Production"]
-          }
-        ]
-      }
+      # Category-based protection maps to v2 category ext-ids: the legacy
+      # protection_rule.category_filter (name/value params) becomes
+      # protection_policy_v2.category_ids (Prism Central category ext-ids).
+      category_ids = var.protected_category_ext_ids
     }
   }
 }
@@ -181,14 +141,4 @@ output "protection_policies" {
 output "protection_policy_ids" {
   description = "Created protection policy IDs"
   value       = module.pe.protection_policy_ids
-}
-
-output "protection_rules" {
-  description = "Created protection rules"
-  value       = module.pe.protection_rules
-}
-
-output "protection_rule_ids" {
-  description = "Created protection rule IDs"
-  value       = module.pe.protection_rule_ids
 }

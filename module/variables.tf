@@ -44,46 +44,6 @@ variable "protection_policies" {
   default = {}
 }
 
-variable "protection_rules" {
-  description = "Map of protection rules (v1) to create"
-  type = map(object({
-    name        = string
-    description = string
-    ordered_availability_zone_list = optional(list(object({
-      cluster_uuid          = optional(string)
-      availability_zone_url = optional(string)
-    })), [])
-    availability_zone_connectivity_list = optional(list(object({
-      destination_availability_zone_index = optional(number)
-      source_availability_zone_index      = optional(number)
-      snapshot_schedule_list = optional(list(object({
-        recovery_point_objective_secs = number
-        snapshot_type                 = optional(string) # CRASH_CONSISTENT or APP_CONSISTENT
-        local_snapshot_retention_policy = optional(object({
-          num_snapshots                                  = optional(number)
-          rollup_retention_policy_multiple               = optional(number)
-          rollup_retention_policy_snapshot_interval_type = optional(string)
-        }))
-        auto_suspend_timeout_secs = optional(number)
-        remote_snapshot_retention_policy = optional(object({
-          num_snapshots                                  = optional(number)
-          rollup_retention_policy_multiple               = optional(number)
-          rollup_retention_policy_snapshot_interval_type = optional(string)
-        }))
-      })), [])
-    })), [])
-    category_filter = optional(object({
-      type      = optional(string)
-      kind_list = optional(list(string), [])
-      params = optional(list(object({
-        name   = string
-        values = list(string)
-      })), [])
-    }))
-  }))
-  default = {}
-}
-
 variable "recovery_plans" {
   description = "Map of recovery plans (v1) to create"
   type = map(object({

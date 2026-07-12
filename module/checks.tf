@@ -41,21 +41,6 @@ check "protection_policies_valid_rpo_type" {
   }
 }
 
-check "protection_rules_valid_snapshot_type" {
-  assert {
-    condition = alltrue(flatten([
-      for k, v in var.protection_rules : [
-        for conn in coalesce(v.availability_zone_connectivity_list, []) : [
-          for sched in coalesce(conn.snapshot_schedule_list, []) :
-          sched.snapshot_type == null ||
-          contains(["CRASH_CONSISTENT", "APP_CONSISTENT"], sched.snapshot_type)
-        ]
-      ]
-    ]))
-    error_message = "Protection rule snapshot_type must be CRASH_CONSISTENT or APP_CONSISTENT."
-  }
-}
-
 check "recovery_points_valid_status" {
   assert {
     condition = alltrue([

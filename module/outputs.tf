@@ -20,27 +20,6 @@ output "protection_policy_ids" {
   }
 }
 
-output "protection_rules" {
-  description = "Protection rules (v1) created"
-  value = {
-    for k, v in nutanix_protection_rule.rule : k => {
-      id                                  = v.id
-      name                                = v.name
-      description                         = v.description
-      ordered_availability_zone_list      = v.ordered_availability_zone_list
-      availability_zone_connectivity_list = v.availability_zone_connectivity_list
-      category_filter                     = v.category_filter
-    }
-  }
-}
-
-output "protection_rule_ids" {
-  description = "Map of protection rule keys to their IDs"
-  value = {
-    for k, v in nutanix_protection_rule.rule : k => v.id
-  }
-}
-
 output "recovery_plans" {
   description = "Recovery plans (v1) created"
   value = {
@@ -140,9 +119,6 @@ output "pe_summary" {
       async_policies_count        = length(local.async_protection_policies)
       linear_retention_count      = length(local.linear_retention_policies)
       auto_rollup_retention_count = length(local.auto_rollup_retention_policies)
-    }
-    protection_rules = {
-      total = length(nutanix_protection_rule.rule)
     }
     recovery_plans = {
       total = length(nutanix_recovery_plan.plan)
