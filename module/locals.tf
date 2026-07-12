@@ -54,4 +54,16 @@ locals {
   recovery_point_ext_ids = {
     for k, v in nutanix_recovery_points_v2.recovery_point : k => v.ext_id
   }
+
+  # Cluster name to ext_id lookup map (when data lookups enabled)
+  clusters = var.enable_data_lookups ? {
+    for cluster in try(data.nutanix_clusters_v2.clusters.cluster_entities, []) :
+    cluster.name => cluster.ext_id
+  } : {}
+
+  # Existing protection policy name to ext_id map (when data lookups enabled)
+  existing_protection_policies = var.enable_data_lookups ? {
+    for policy in try(data.nutanix_protection_policies_v2.existing[0].protection_policies, []) :
+    policy.name => policy.ext_id
+  } : {}
 }

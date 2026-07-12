@@ -13,6 +13,13 @@ output "protection_policies" {
   }
 }
 
+output "protection_policy_ids" {
+  description = "Map of protection policy keys to their IDs"
+  value = {
+    for k, v in nutanix_protection_policy_v2.policy : k => v.id
+  }
+}
+
 output "protection_rules" {
   description = "Protection rules (v1) created"
   value = {
@@ -24,6 +31,13 @@ output "protection_rules" {
       availability_zone_connectivity_list = v.availability_zone_connectivity_list
       category_filter                     = v.category_filter
     }
+  }
+}
+
+output "protection_rule_ids" {
+  description = "Map of protection rule keys to their IDs"
+  value = {
+    for k, v in nutanix_protection_rule.rule : k => v.id
   }
 }
 
@@ -40,6 +54,13 @@ output "recovery_plans" {
   }
 }
 
+output "recovery_plan_ids" {
+  description = "Map of recovery plan keys to their IDs"
+  value = {
+    for k, v in nutanix_recovery_plan.plan : k => v.id
+  }
+}
+
 output "recovery_points" {
   description = "Recovery points (v2) created"
   value = {
@@ -53,6 +74,13 @@ output "recovery_points" {
       vm_recovery_points           = v.vm_recovery_points
       volume_group_recovery_points = v.volume_group_recovery_points
     }
+  }
+}
+
+output "recovery_point_ids" {
+  description = "Map of recovery point keys to their external IDs"
+  value = {
+    for k, v in nutanix_recovery_points_v2.recovery_point : k => v.ext_id
   }
 }
 

@@ -1,3 +1,9 @@
+variable "enable_data_lookups" {
+  description = "Enable data source lookups for existing resources"
+  type        = bool
+  default     = false
+}
+
 variable "protection_policies" {
   description = "Map of protection policies (v2) to create"
   type = map(object({
