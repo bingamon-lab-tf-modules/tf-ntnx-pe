@@ -61,3 +61,38 @@ check "recovery_points_valid_type" {
     error_message = "Recovery point type must be CRASH_CONSISTENT or APPLICATION_CONSISTENT."
   }
 }
+
+# ---------------------------------------------------------------------------
+# PE cluster lifecycle (v2) assertions — issue 589
+# ---------------------------------------------------------------------------
+
+check "clusters_have_valid_redundancy_factor" {
+  assert {
+    condition = alltrue([
+      for k, v in var.clusters :
+      v.config == null || v.config.redundancy_factor == null ||
+      contains([1, 2, 3], v.config.redundancy_factor)
+    ])
+    error_message = "Cluster config.redundancy_factor, when set, must be 1, 2, or 3."
+  }
+}
+
+check "cluster_node_additions_have_nodes" {
+  assert {
+    condition = alltrue([
+      for k, v in var.cluster_node_additions :
+      length(v.node_params.node_list) >= 1
+    ])
+    error_message = "Each cluster_node_addition must supply at least one node in node_params.node_list."
+  }
+}
+
+check "node_network_fetches_have_nodes" {
+  assert {
+    condition = alltrue([
+      for k, v in var.node_network_fetches :
+      length(v.node_list) >= 1
+    ])
+    error_message = "Each node_network_fetch must supply at least one node in node_list."
+  }
+}

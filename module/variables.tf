@@ -156,3 +156,306 @@ variable "promote_protected_resources" {
   }))
   default = {}
 }
+
+# ---------------------------------------------------------------------------
+# PE cluster lifecycle (v2) — issue 589
+#
+# DANGER: these four resource families mutate physical Prism-Element clusters.
+# Every map defaults to {} so a caller that passes nothing (e.g. the
+# backup_recovery LZ) plans zero cluster resources. Only the prism_central LZ
+# should ever populate them, behind its lz_enable_prism_central flag.
+# ---------------------------------------------------------------------------
+
+variable "clusters" {
+  description = <<-EOT
+    Map of PE clusters to CREATE/MANAGE via nutanix_cluster_v2 (one entry per
+    cluster). Each entry needs a non-empty name and at least one node in
+    nodes.node_list (with a controller_vm_ip; host_ip optional).
+
+    DESTROY SEMANTICS — READ BEFORE USE: nutanix_cluster_v2 CREATE forms a REAL
+    Prism-Element cluster and `tofu destroy` (or removing a map key) DESTROYS
+    that cluster. This must NEVER be reachable from a casually-edited YAML
+    default — keep this map empty ({}) unless you deliberately intend to
+    form/expand a cluster, and gate it behind the LZ enable flag
+    (588's lz_enable_prism_central, default false). Use nutanix_cluster_v2 for
+    API-driven formation/expansion of already-imaged nodes; use Foundation
+    (foundation_image_nodes) for bare-metal imaging that forms a cluster during
+    imaging. Default {}.
+  EOT
+  type = map(object({
+    name                   = string
+    categories             = optional(list(string))
+    cluster_profile_ext_id = optional(string)
+    container_name         = optional(string)
+    dryrun                 = optional(bool)
+    expand                 = optional(string)
+    config = optional(object({
+      cluster_arch                 = optional(string)
+      cluster_function             = optional(list(string))
+      redundancy_factor            = optional(number)
+      operation_mode               = optional(string)
+      encryption_in_transit_status = optional(string)
+    }))
+    network = optional(object({
+      fqdn                       = optional(string)
+      key_management_server_type = optional(string)
+      nfs_subnet_white_list      = optional(list(string))
+    }))
+    nodes = object({
+      node_list = list(object({
+        hypervisor_hostname            = optional(string)
+        is_compute_only                = optional(bool)
+        is_light_compute               = optional(bool)
+        is_never_scheduleable          = optional(bool)
+        should_skip_add_node           = optional(bool)
+        should_skip_discovery          = optional(bool)
+        should_skip_host_networking    = optional(bool)
+        should_skip_imaging            = optional(bool)
+        should_skip_pre_expand_checks  = optional(bool)
+        should_validate_rack_awareness = optional(bool)
+        controller_vm_ip = object({
+          ipv4 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+          ipv6 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+        })
+        host_ip = optional(object({
+          ipv4 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+          ipv6 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+        }))
+      }))
+    })
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.clusters :
+      trimspace(v.name) != "" && length(v.nodes.node_list) >= 1
+    ])
+    error_message = "Each cluster must have a non-empty name and at least one node in nodes.node_list (cluster_v2 create forms a REAL PE cluster; keep this map {} unless forming/expanding one)."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for k, v in var.clusters : [
+        for n in v.nodes.node_list : [
+          can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", try(n.controller_vm_ip.ipv4.value, "0.0.0.0"))),
+          can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", try(n.host_ip.ipv4.value, "0.0.0.0"))),
+        ]
+      ]
+    ]))
+    error_message = "controller_vm_ip.ipv4.value and host_ip.ipv4.value (where set) must be dotted-quad IPv4 addresses."
+  }
+}
+
+variable "cluster_node_additions" {
+  description = <<-EOT
+    Map of node-addition ACTIONS via nutanix_cluster_add_node_v2 — expands an
+    EXISTING cluster (cluster_ext_id) with the nodes in node_params.node_list.
+
+    ONE-SHOT ACTION SEMANTICS: this is imperative — applying it executes an
+    expansion. Re-running against the same nodes is not idempotent; to add more
+    nodes later, use a NEW for_each map key. `tofu destroy` does NOT remove the
+    added nodes (it only forgets the action from state). Default {}.
+  EOT
+  type = map(object({
+    cluster_ext_id                = string
+    should_skip_add_node          = optional(bool)
+    should_skip_pre_expand_checks = optional(bool)
+    config_params = optional(object({
+      is_compute_only                = optional(bool)
+      is_never_schedulable           = optional(bool)
+      is_nos_compatible              = optional(bool)
+      should_skip_discovery          = optional(bool)
+      should_skip_imaging            = optional(bool)
+      should_validate_rack_awareness = optional(bool)
+      target_hypervisor              = optional(string)
+    }))
+    node_params = object({
+      hyperv_sku                  = optional(string)
+      should_skip_host_networking = optional(bool)
+      node_list = list(object({
+        block_id                  = optional(string)
+        hypervisor_hostname       = optional(string)
+        hypervisor_type           = optional(string)
+        hypervisor_version        = optional(string)
+        model                     = optional(string)
+        node_position             = optional(string)
+        node_uuid                 = optional(string)
+        nos_version               = optional(string)
+        current_network_interface = optional(string)
+        is_light_compute          = optional(bool)
+        is_robo_mixed_hypervisor  = optional(bool)
+        cvm_ip = optional(object({
+          ipv4 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+          ipv6 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+        }))
+        hypervisor_ip = optional(object({
+          ipv4 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+          ipv6 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+        }))
+        ipmi_ip = optional(object({
+          ipv4 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+          ipv6 = optional(object({
+            value         = string
+            prefix_length = optional(number)
+          }))
+        }))
+      }))
+    })
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.cluster_node_additions :
+      trimspace(v.cluster_ext_id) != "" && length(v.node_params.node_list) >= 1
+    ])
+    error_message = "Each cluster_node_addition must set a non-empty cluster_ext_id and at least one node in node_params.node_list."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for k, v in var.cluster_node_additions : [
+        for n in v.node_params.node_list :
+        can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", try(n.cvm_ip.ipv4.value, "0.0.0.0")))
+      ]
+    ]))
+    error_message = "cvm_ip.ipv4.value (where set) must be a dotted-quad IPv4 address."
+  }
+}
+
+variable "node_discoveries" {
+  description = <<-EOT
+    Map of unconfigured-node DISCOVERY actions via
+    nutanix_clusters_discover_unconfigured_nodes_v2. `ext_id` is the target
+    cluster's external id to discover against; results land in state
+    (unconfigured_nodes).
+
+    ONE-SHOT ACTION SEMANTICS: discovery is imperative and writes its result to
+    state. Re-discover = a NEW for_each key. `tofu destroy` does nothing to the
+    physical nodes. Default {}.
+  EOT
+  type = map(object({
+    ext_id                = string
+    address_type          = optional(string)
+    interface_filter_list = optional(list(string))
+    is_manual_discovery   = optional(bool)
+    timeout               = optional(number)
+    uuid_filter_list      = optional(list(string))
+    ip_filter_list = optional(list(object({
+      ipv4 = optional(object({
+        value         = string
+        prefix_length = optional(number)
+      }))
+      ipv6 = optional(object({
+        value         = string
+        prefix_length = optional(number)
+      }))
+    })), [])
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.node_discoveries : trimspace(v.ext_id) != ""
+    ])
+    error_message = "Each node_discovery must set a non-empty ext_id (the target cluster external id)."
+  }
+}
+
+variable "node_network_fetches" {
+  description = <<-EOT
+    Map of unconfigured-node NETWORK-INFO fetch actions via
+    nutanix_clusters_unconfigured_node_networks_v2. `ext_id` is the target
+    cluster's external id; node_list identifies the unconfigured nodes to fetch
+    network details for; results land in state (nodes_networking_details).
+
+    ONE-SHOT ACTION SEMANTICS: this fetch is imperative and writes its result to
+    state. Re-fetch = a NEW for_each key. `tofu destroy` does nothing to the
+    physical nodes. Default {}.
+  EOT
+  type = map(object({
+    ext_id       = string
+    expand       = optional(string)
+    request_type = optional(string)
+    node_list = list(object({
+      block_id                  = optional(string)
+      current_network_interface = optional(string)
+      hypervisor_type           = optional(string)
+      hypervisor_version        = optional(string)
+      model                     = optional(string)
+      node_position             = optional(string)
+      node_uuid                 = optional(string)
+      nos_version               = optional(string)
+      is_compute_only           = optional(bool)
+      is_light_compute          = optional(bool)
+      is_robo_mixed_hypervisor  = optional(bool)
+      cvm_ip = optional(object({
+        ipv4 = optional(object({
+          value         = string
+          prefix_length = optional(number)
+        }))
+        ipv6 = optional(object({
+          value         = string
+          prefix_length = optional(number)
+        }))
+      }))
+      hypervisor_ip = optional(object({
+        ipv4 = optional(object({
+          value         = string
+          prefix_length = optional(number)
+        }))
+        ipv6 = optional(object({
+          value         = string
+          prefix_length = optional(number)
+        }))
+      }))
+      ipmi_ip = optional(object({
+        ipv4 = optional(object({
+          value         = string
+          prefix_length = optional(number)
+        }))
+        ipv6 = optional(object({
+          value         = string
+          prefix_length = optional(number)
+        }))
+      }))
+    }))
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.node_network_fetches :
+      trimspace(v.ext_id) != "" && length(v.node_list) >= 1
+    ])
+    error_message = "Each node_network_fetch must set a non-empty ext_id and at least one node in node_list."
+  }
+}

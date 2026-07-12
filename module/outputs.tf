@@ -106,6 +106,35 @@ output "promote_protected_resources" {
   }
 }
 
+# ---------------------------------------------------------------------------
+# PE cluster lifecycle (v2) outputs — issue 589
+# ---------------------------------------------------------------------------
+
+output "clusters" {
+  description = "PE clusters (v2) managed by this module (id, ext_id, name per key)"
+  value       = local.out_clusters
+}
+
+output "cluster_ids" {
+  description = "Map of cluster keys to their external IDs"
+  value       = local.out_cluster_ids
+}
+
+output "cluster_node_additions" {
+  description = "Node-addition actions (v2) applied, keyed by map key"
+  value       = local.out_cluster_node_additions
+}
+
+output "node_discoveries" {
+  description = "Unconfigured-node discovery results (v2), keyed by map key"
+  value       = local.out_node_discoveries
+}
+
+output "node_network_fetches" {
+  description = "Unconfigured-node network-info fetch results (v2), keyed by map key"
+  value       = local.out_node_network_fetches
+}
+
 output "pe_summary" {
   description = "Summary of Prism Element protection and recovery resources"
   value       = local.out_pe_summary
@@ -185,6 +214,13 @@ output "outputs" {
         ext_id = v.ext_id
       }
     }
-    pe_summary = local.out_pe_summary
+    # PE cluster lifecycle (v2) — issue 589. Factored via locals so these
+    # members stay identical to their standalone outputs above.
+    clusters               = local.out_clusters
+    cluster_ids            = local.out_cluster_ids
+    cluster_node_additions = local.out_cluster_node_additions
+    node_discoveries       = local.out_node_discoveries
+    node_network_fetches   = local.out_node_network_fetches
+    pe_summary             = local.out_pe_summary
   }
 }
