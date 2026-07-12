@@ -61,4 +61,11 @@ locals {
     for policy in try(data.nutanix_protection_policies_v2.existing[0].protection_policies, []) :
     policy.name => policy.ext_id
   } : {}
+
+  # Existing recovery point name to ext_id map (when data lookups enabled).
+  # Recovery points may be unnamed, so entries without a name are skipped.
+  existing_recovery_points = var.enable_data_lookups ? {
+    for rp in try(data.nutanix_recovery_points_v2.existing[0].recovery_points, []) :
+    rp.name => rp.ext_id if rp.name != null
+  } : {}
 }
