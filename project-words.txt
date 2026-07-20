@@ -72,3 +72,4 @@ trivycache
 unconfigured
 utilize
 prek
+nixos
