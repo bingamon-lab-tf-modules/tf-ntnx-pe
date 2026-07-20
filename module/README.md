@@ -100,7 +100,7 @@ to `{}`, so no live state holds the legacy address.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.10.0 |
 | <a name="requirement_nutanix"></a> [nutanix](#requirement\_nutanix) | >= 2.4.2 |
 
 ## Providers
@@ -130,8 +130,6 @@ No modules.
 | [nutanix_restore_protected_resource_v2.restore_resource](https://registry.terraform.io/providers/nutanix/nutanix/latest/docs/resources/restore_protected_resource_v2) | resource |
 | [nutanix_clusters_v2.clusters](https://registry.terraform.io/providers/nutanix/nutanix/latest/docs/data-sources/clusters_v2) | data source |
 | [nutanix_hosts_v2.hosts](https://registry.terraform.io/providers/nutanix/nutanix/latest/docs/data-sources/hosts_v2) | data source |
-| [nutanix_protection_policies_v2.existing](https://registry.terraform.io/providers/nutanix/nutanix/latest/docs/data-sources/protection_policies_v2) | data source |
-| [nutanix_recovery_points_v2.existing](https://registry.terraform.io/providers/nutanix/nutanix/latest/docs/data-sources/recovery_points_v2) | data source |
 
 ## Inputs
 
