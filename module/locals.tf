@@ -35,39 +35,6 @@ locals {
     ])
   }
 
-  # Map of protection policy names to their IDs for reference
-  protection_policy_ids = {
-    for k, v in nutanix_protection_policy_v2.policy : k => v.id
-  }
-
-  # Map of recovery plan names to their IDs for reference
-  recovery_plan_ids = {
-    for k, v in nutanix_recovery_plan.plan : k => v.id
-  }
-
-  # Map of recovery point names to their ext_ids for reference
-  recovery_point_ext_ids = {
-    for k, v in nutanix_recovery_points_v2.recovery_point : k => v.ext_id
-  }
-
-  # Cluster name to ext_id lookup map (when data lookups enabled)
-  clusters = var.enable_data_lookups ? {
-    for cluster in try(data.nutanix_clusters_v2.clusters.cluster_entities, []) :
-    cluster.name => cluster.ext_id
-  } : {}
-
-  # Existing protection policy name to ext_id map (when data lookups enabled)
-  existing_protection_policies = var.enable_data_lookups ? {
-    for policy in try(data.nutanix_protection_policies_v2.existing[0].protection_policies, []) :
-    policy.name => policy.ext_id
-  } : {}
-
-  # Existing recovery point name to ext_id map (when data lookups enabled).
-  # Recovery points may be unnamed, so entries without a name are skipped.
-  existing_recovery_points = var.enable_data_lookups ? {
-    for rp in try(data.nutanix_recovery_points_v2.existing[0].recovery_points, []) :
-    rp.name => rp.ext_id if rp.name != null
-  } : {}
 
   # ---------------------------------------------------------------------------
   # Factored output value expressions
