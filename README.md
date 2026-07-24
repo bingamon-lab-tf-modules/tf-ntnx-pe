@@ -2,6 +2,6 @@
 
 ## Overview
 
-An overview of the module goes here
+Terraform Module for managing Nutanix Prism Element (PE) configurations.
 
 The [Terraform Module](module/README.md) documentation contains the available variables and outputs.
