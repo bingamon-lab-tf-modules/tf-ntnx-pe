@@ -12,7 +12,7 @@ resource "nutanix_protection_policy_v2" "policy" {
 
       schedule {
         recovery_point_objective_time_seconds         = replication_configurations.value.schedule.recovery_point_objective_time_seconds
-        recovery_point_type                           = replication_configurations.value.schedule.recovery_point_type
+        recovery_point_type                           = replication_configurations.value.schedule.recovery_point_type == "APP_CONSISTENT" ? "APPLICATION_CONSISTENT" : replication_configurations.value.schedule.recovery_point_type
         sync_replication_auto_suspend_timeout_seconds = replication_configurations.value.schedule.sync_replication_auto_suspend_timeout_seconds
         start_time                                    = replication_configurations.value.schedule.start_time
 
