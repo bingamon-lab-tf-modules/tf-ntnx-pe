@@ -2,9 +2,9 @@ check "protection_policies_have_locations" {
   assert {
     condition = alltrue([
       for k, v in var.protection_policies :
-      length(v.replication_locations) >= 2
+      length(v.replication_locations) == 0 || length(v.replication_locations) >= 1
     ])
-    error_message = "Protection policies should have at least 2 replication locations."
+    error_message = "Protection policies with replication configured should have at least 1 replication location."
   }
 }
 
@@ -12,9 +12,9 @@ check "protection_policies_have_primary" {
   assert {
     condition = alltrue([
       for k, v in var.protection_policies :
-      anytrue([for loc in v.replication_locations : loc.is_primary == true])
+      length(v.replication_locations) == 0 || anytrue([for loc in v.replication_locations : loc.is_primary == true])
     ])
-    error_message = "Protection policies should have exactly one primary replication location."
+    error_message = "Protection policies with replication locations should have exactly one primary replication location."
   }
 }
 
