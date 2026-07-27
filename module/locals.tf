@@ -116,4 +116,18 @@ locals {
       resource_promotes = length(nutanix_promote_protected_resource_v2.promote_resource)
     }
   }
+
+  ##################################################
+  # Protection policy category resolution
+  #
+  # Combines keys (resolved against the security_governance landing zone's
+  # category_ids) with any literal ext_ids. Referencing the passed-in map is
+  # what gives OpenTofu the ordering edge categories -> protection policies.
+  ##################################################
+  protection_policy_category_ids = {
+    for k, v in var.protection_policies : k => concat(
+      [for ck in v.category_keys : var.category_ids[ck]],
+      v.category_ids,
+    )
+  }
 }

@@ -4,6 +4,31 @@ variable "enable_data_lookups" {
   default     = false
 }
 
+##################################################
+# Cross-landing-zone inputs
+##################################################
+
+# Categories are owned by the security_governance landing zone. This module
+# cannot depend on them directly, so the caller passes that landing zone's
+# category_ids output in here. A protection policy then names a category by
+# KEY (category_keys) instead of carrying a per-Prism-Central UUID, and
+# OpenTofu gets a real dependency edge: categories -> protection policies.
+variable "category_ids" {
+  description = "Map of category key => ext_id, supplied by the caller from the security_governance landing zone's category_ids output. Referenced by a protection policy's 'category_keys'. Empty when that landing zone is disabled, in which case policies must use raw category_ids."
+  type        = map(string)
+  default     = {}
+}
+
+# Prism Central's own ext_id, used as the default domain_manager_ext_id for any
+# replication_location that omits one. Mirrors the fallback tf-ntnx-pc already
+# implements, and keeps the PC UUID out of YAML: a single-site policy just says
+# is_primary and lets this fill in.
+variable "domain_manager_ext_id" {
+  description = "Prism Central (domain manager) ext_id, used as the default for replication_locations that omit domain_manager_ext_id. Supplied by the caller so config never carries the PC UUID."
+  type        = string
+  default     = null
+}
+
 variable "protection_policies" {
   description = "Map of protection policies (v2) to create"
   type = map(object({
@@ -32,16 +57,28 @@ variable "protection_policies" {
       })
     })), [])
     replication_locations = optional(list(object({
-      label                 = string
-      domain_manager_ext_id = string
+      label = string
+      # Omit to default to var.domain_manager_ext_id (this Prism Central) —
+      # which is what a single-site, local-retention policy wants.
+      domain_manager_ext_id = optional(string, null)
       is_primary            = optional(bool, false)
       replication_sub_location = optional(object({
         cluster_ext_ids = optional(list(string), [])
       }))
     })), [])
-    category_ids = optional(list(string), [])
+    # Workloads this policy protects. Supply EITHER:
+    #   category_keys -- keys into var.category_ids, resolved to ext_ids. This
+    #     is the maintainable form: tag a VM with the category and it is
+    #     protected on the next sync, with no change to this config. New
+    #     workloads cannot be silently missed.
+    #   category_ids  -- literal category ext_ids. Escape hatch for a category
+    #     not managed by the security_governance landing zone (a built-in
+    #     SYSTEM category, for instance).
+    category_keys = optional(list(string), [])
+    category_ids  = optional(list(string), [])
   }))
   default = {}
+
 }
 
 variable "recovery_plans" {

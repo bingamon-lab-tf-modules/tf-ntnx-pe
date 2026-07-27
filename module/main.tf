@@ -61,9 +61,14 @@ resource "nutanix_protection_policy_v2" "policy" {
   dynamic "replication_locations" {
     for_each = each.value.replication_locations != null ? each.value.replication_locations : []
     content {
-      label                 = replication_locations.value.label
-      domain_manager_ext_id = replication_locations.value.domain_manager_ext_id
-      is_primary            = replication_locations.value.is_primary
+      label = replication_locations.value.label
+      # Default to this Prism Central when the location omits one, so a
+      # single-site policy never carries the PC UUID in config.
+      domain_manager_ext_id = coalesce(
+        replication_locations.value.domain_manager_ext_id,
+        var.domain_manager_ext_id,
+      )
+      is_primary = replication_locations.value.is_primary
 
       dynamic "replication_sub_location" {
         for_each = replication_locations.value.replication_sub_location != null ? [replication_locations.value.replication_sub_location] : []
@@ -79,7 +84,11 @@ resource "nutanix_protection_policy_v2" "policy" {
     }
   }
 
-  category_ids = each.value.category_ids
+  # category_keys resolve against the categories the security_governance
+  # landing zone created, which is what makes those categories exist before
+  # any policy references them. Raw category_ids are appended for anything
+  # that landing zone does not manage.
+  category_ids = local.protection_policy_category_ids[each.key]
 }
 
 resource "nutanix_recovery_plan" "plan" {
