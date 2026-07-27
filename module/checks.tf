@@ -34,10 +34,10 @@ check "protection_policies_valid_rpo_type" {
       for k, v in var.protection_policies : [
         for config in v.replication_configurations :
         config.schedule.recovery_point_type == null ||
-        contains(["CRASH_CONSISTENT", "APP_CONSISTENT"], config.schedule.recovery_point_type)
+        contains(["CRASH_CONSISTENT", "APP_CONSISTENT", "APPLICATION_CONSISTENT"], config.schedule.recovery_point_type)
       ]
     ]))
-    error_message = "Protection policy recovery_point_type must be CRASH_CONSISTENT or APP_CONSISTENT."
+    error_message = "Protection policy recovery_point_type must be CRASH_CONSISTENT, APP_CONSISTENT, or APPLICATION_CONSISTENT."
   }
 }
 
