@@ -96,3 +96,22 @@ check "node_network_fetches_have_nodes" {
     error_message = "Each node_network_fetch must supply at least one node in node_list."
   }
 }
+
+# A protection policy's category_keys must resolve against the map passed in
+# from the security_governance landing zone.
+#
+# A check rather than a variable validation: var.category_ids comes from
+# ANOTHER landing zone's output, so on a clean-slate apply its keys are not
+# known at validate time. This reports the mismatch at plan time with the
+# offending key named, instead of failing inside a for-expression.
+check "protection_policy_category_keys_resolve" {
+  assert {
+    condition = alltrue(flatten([
+      for k, v in var.protection_policies : [
+        for ck in v.category_keys : contains(keys(var.category_ids), ck)
+      ]
+    ]))
+    error_message = "A protection policy 'category_keys' entry is not in var.category_ids. Check the security_governance landing zone is enabled and the key matches a category it manages."
+  }
+}
+
