@@ -39,7 +39,7 @@ variable "protection_policies" {
       remote_location_label = optional(string)
       schedule = object({
         recovery_point_objective_time_seconds         = number
-        recovery_point_type                           = optional(string) # CRASH_CONSISTENT or APP_CONSISTENT
+        recovery_point_type                           = optional(string) # CRASH_CONSISTENT or APPLICATION_CONSISTENT (APP_CONSISTENT auto-mapped)
         sync_replication_auto_suspend_timeout_seconds = optional(number)
         start_time                                    = optional(string)
         retention = optional(object({
