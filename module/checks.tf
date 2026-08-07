@@ -2,9 +2,9 @@ check "protection_policies_have_locations" {
   assert {
     condition = alltrue([
       for k, v in var.protection_policies :
-      length(v.replication_locations) == 0 || length(v.replication_locations) >= 1
+      length(v.replication_configurations) == 0 || length(v.replication_locations) >= 2
     ])
-    error_message = "Protection policies with replication configured should have at least 1 replication location."
+    error_message = "Protection policies with replication configured should have at least 2 replication locations (a source and a remote)."
   }
 }
 
