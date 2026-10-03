@@ -99,14 +99,14 @@ to `{}`, so no live state holds the legacy address.
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.10.0 |
 | <a name="requirement_nutanix"></a> [nutanix](#requirement\_nutanix) | >= 2.4.2 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_nutanix"></a> [nutanix](#provider\_nutanix) | 2.4.2 |
 
 ## Modules
@@ -116,7 +116,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [nutanix_cluster_add_node_v2.node_addition](https://registry.terraform.io/providers/nutanix/nutanix/latest/docs/resources/cluster_add_node_v2) | resource |
 | [nutanix_cluster_v2.cluster](https://registry.terraform.io/providers/nutanix/nutanix/latest/docs/resources/cluster_v2) | resource |
 | [nutanix_clusters_discover_unconfigured_nodes_v2.node_discovery](https://registry.terraform.io/providers/nutanix/nutanix/latest/docs/resources/clusters_discover_unconfigured_nodes_v2) | resource |
@@ -134,7 +134,7 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_category_ids"></a> [category\_ids](#input\_category\_ids) | Map of category key => ext\_id, supplied by the caller from the security\_governance landing zone's category\_ids output. Referenced by a protection policy's 'category\_keys'. Empty when that landing zone is disabled, in which case policies must use raw category\_ids. | `map(string)` | `{}` | no |
 | <a name="input_cluster_node_additions"></a> [cluster\_node\_additions](#input\_cluster\_node\_additions) | Map of node-addition ACTIONS via nutanix\_cluster\_add\_node\_v2 — expands an<br/>EXISTING cluster (cluster\_ext\_id) with the nodes in node\_params.node\_list.<br/><br/>ONE-SHOT ACTION SEMANTICS: this is imperative — applying it executes an<br/>expansion. Re-running against the same nodes is not idempotent; to add more<br/>nodes later, use a NEW for\_each map key. `tofu destroy` does NOT remove the<br/>added nodes (it only forgets the action from state). Default {}. | <pre>map(object({<br/>    cluster_ext_id                = string<br/>    should_skip_add_node          = optional(bool)<br/>    should_skip_pre_expand_checks = optional(bool)<br/>    config_params = optional(object({<br/>      is_compute_only                = optional(bool)<br/>      is_never_schedulable           = optional(bool)<br/>      is_nos_compatible              = optional(bool)<br/>      should_skip_discovery          = optional(bool)<br/>      should_skip_imaging            = optional(bool)<br/>      should_validate_rack_awareness = optional(bool)<br/>      target_hypervisor              = optional(string)<br/>    }))<br/>    node_params = object({<br/>      hyperv_sku                  = optional(string)<br/>      should_skip_host_networking = optional(bool)<br/>      node_list = list(object({<br/>        block_id                  = optional(string)<br/>        hypervisor_hostname       = optional(string)<br/>        hypervisor_type           = optional(string)<br/>        hypervisor_version        = optional(string)<br/>        model                     = optional(string)<br/>        node_position             = optional(string)<br/>        node_uuid                 = optional(string)<br/>        nos_version               = optional(string)<br/>        current_network_interface = optional(string)<br/>        is_light_compute          = optional(bool)<br/>        is_robo_mixed_hypervisor  = optional(bool)<br/>        cvm_ip = optional(object({<br/>          ipv4 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>          ipv6 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>        }))<br/>        hypervisor_ip = optional(object({<br/>          ipv4 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>          ipv6 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>        }))<br/>        ipmi_ip = optional(object({<br/>          ipv4 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>          ipv6 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>        }))<br/>      }))<br/>    })<br/>  }))</pre> | `{}` | no |
 | <a name="input_clusters"></a> [clusters](#input\_clusters) | Map of PE clusters to CREATE/MANAGE via nutanix\_cluster\_v2 (one entry per<br/>cluster). Each entry needs a non-empty name and at least one node in<br/>nodes.node\_list (with a controller\_vm\_ip; host\_ip optional).<br/><br/>DESTROY SEMANTICS — READ BEFORE USE: nutanix\_cluster\_v2 CREATE forms a REAL<br/>Prism-Element cluster and `tofu destroy` (or removing a map key) DESTROYS<br/>that cluster. This must NEVER be reachable from a casually-edited YAML<br/>default — keep this map empty ({}) unless you deliberately intend to<br/>form/expand a cluster, and gate it behind the LZ enable flag<br/>(588's lz\_enable\_prism\_central, default false). Use nutanix\_cluster\_v2 for<br/>API-driven formation/expansion of already-imaged nodes; use Foundation<br/>(foundation\_image\_nodes) for bare-metal imaging that forms a cluster during<br/>imaging. Default {}. | <pre>map(object({<br/>    name                   = string<br/>    categories             = optional(list(string))<br/>    cluster_profile_ext_id = optional(string)<br/>    container_name         = optional(string)<br/>    dryrun                 = optional(bool)<br/>    expand                 = optional(string)<br/>    config = optional(object({<br/>      cluster_arch                 = optional(string)<br/>      cluster_function             = optional(list(string))<br/>      redundancy_factor            = optional(number)<br/>      operation_mode               = optional(string)<br/>      encryption_in_transit_status = optional(string)<br/>    }))<br/>    network = optional(object({<br/>      fqdn                       = optional(string)<br/>      key_management_server_type = optional(string)<br/>      nfs_subnet_white_list      = optional(list(string))<br/>    }))<br/>    nodes = object({<br/>      node_list = list(object({<br/>        hypervisor_hostname            = optional(string)<br/>        is_compute_only                = optional(bool)<br/>        is_light_compute               = optional(bool)<br/>        is_never_scheduleable          = optional(bool)<br/>        should_skip_add_node           = optional(bool)<br/>        should_skip_discovery          = optional(bool)<br/>        should_skip_host_networking    = optional(bool)<br/>        should_skip_imaging            = optional(bool)<br/>        should_skip_pre_expand_checks  = optional(bool)<br/>        should_validate_rack_awareness = optional(bool)<br/>        controller_vm_ip = object({<br/>          ipv4 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>          ipv6 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>        })<br/>        host_ip = optional(object({<br/>          ipv4 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>          ipv6 = optional(object({<br/>            value         = string<br/>            prefix_length = optional(number)<br/>          }))<br/>        }))<br/>      }))<br/>    })<br/>  }))</pre> | `{}` | no |
@@ -153,7 +153,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_cluster_ids"></a> [cluster\_ids](#output\_cluster\_ids) | Map of cluster keys to their external IDs |
 | <a name="output_cluster_node_additions"></a> [cluster\_node\_additions](#output\_cluster\_node\_additions) | Node-addition actions (v2) applied, keyed by map key |
 | <a name="output_clusters"></a> [clusters](#output\_clusters) | PE clusters (v2) managed by this module (id, ext\_id, name per key) |
