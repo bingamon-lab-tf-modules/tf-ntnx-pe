@@ -76,3 +76,5 @@ nixos
 SecretSpec
 mktemp
 bingamon
+esac
+secops
