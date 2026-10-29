@@ -73,3 +73,8 @@ unconfigured
 utilize
 prek
 nixos
+SecretSpec
+mktemp
+bingamon
+esac
+secops
