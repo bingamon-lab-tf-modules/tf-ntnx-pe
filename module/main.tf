@@ -15,6 +15,7 @@ resource "nutanix_protection_policy_v2" "policy" {
         recovery_point_type                           = replication_configurations.value.schedule.recovery_point_type == "APP_CONSISTENT" ? "APPLICATION_CONSISTENT" : replication_configurations.value.schedule.recovery_point_type
         sync_replication_auto_suspend_timeout_seconds = replication_configurations.value.schedule.sync_replication_auto_suspend_timeout_seconds
         start_time                                    = replication_configurations.value.schedule.start_time
+        latest_recovery_point_retention_seconds       = replication_configurations.value.schedule.latest_recovery_point_retention_seconds
 
         dynamic "retention" {
           for_each = replication_configurations.value.schedule.retention != null ? [replication_configurations.value.schedule.retention] : []
@@ -242,11 +243,10 @@ resource "nutanix_recovery_point_replicate_v2" "replicate" {
   # Primary identifier for the recovery point to replicate
   ext_id = each.value.ext_id
 
-  # TODO: 'cluster_ext_id' is not supported as an argument on nutanix_recovery_point_replicate_v2 in nutanix provider 2.3.1.
-  # cluster_ext_id = each.value.cluster_ext_id
+  # Optional target cluster external ID for replication
+  cluster_ext_id = each.value.cluster_ext_id
 
-  # Prism Central ext_id if needed for cross-PC replication
-  # Note: This field may not be supported - verify against provider docs
+  # Target Prism Central external ID for replication
   pc_ext_id = each.value.pc_ext_id
 }
 
