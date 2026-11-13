@@ -1,5 +1,6 @@
 ##################################################
 # Unit Tests: Prism Element protection & recovery
+# cspell:words rackable usecs
 ##################################################
 
 #########################
@@ -39,6 +40,13 @@ mock_provider "nutanix" {
   mock_data "nutanix_recovery_points_v2" {
     defaults = {
       recovery_points = []
+    }
+  }
+
+  # Host inventory lookup (gated by enable_data_lookups).
+  mock_data "nutanix_hosts_v2" {
+    defaults = {
+      host_entities = []
     }
   }
 }
@@ -106,8 +114,9 @@ run "protection_policy_and_recovery_point" {
             source_location_label = "primary"
             remote_location_label = "dr-site"
             schedule = {
-              recovery_point_type                   = "CRASH_CONSISTENT"
-              recovery_point_objective_time_seconds = 3600
+              recovery_point_type                     = "CRASH_CONSISTENT"
+              recovery_point_objective_time_seconds   = 3600
+              latest_recovery_point_retention_seconds = 86400
               retention = {
                 linear_retention = {
                   local_retention_count  = 24
@@ -387,5 +396,138 @@ run "multiple_protection_policies" {
   assert {
     condition     = length(output.protection_policy_ids) == 2
     error_message = "Expected exactly 2 protection policy ids"
+  }
+}
+
+# Test 8: Populated cluster and host data lookups validate v2.5.1 schemas
+# (including string-typed network.management_server.type).
+run "data_lookups_populated_inventory" {
+  command = plan
+
+  variables {
+    enable_data_lookups = true
+
+    recovery_point_replicates = {
+      rep1 = {
+        ext_id         = "00000000-0000-0000-0000-0000000000c1"
+        cluster_ext_id = "00000000-0000-0000-0000-0000000000b2"
+        pc_ext_id      = "00000000-0000-0000-0000-0000000000a2"
+      }
+    }
+  }
+
+  override_data {
+    target = data.nutanix_clusters_v2.clusters
+    values = {
+      cluster_entities = [
+        {
+          name                     = "pe-cluster-01"
+          ext_id                   = "00000000-0000-0000-0000-0000000000b1"
+          backup_eligibility_score = null
+          categories               = null
+          cluster_profile_ext_id   = null
+          config                   = null
+          container_name           = null
+          expand                   = null
+          inefficient_vm_count     = null
+          links                    = null
+          network = [
+            {
+              backplane                  = null
+              external_address           = null
+              external_data_services_ip  = null
+              external_subnet            = null
+              fqdn                       = "pe-cluster-01.example.test"
+              http_proxy_list            = null
+              http_proxy_white_list      = null
+              internal_subnet            = null
+              key_management_server_type = null
+              management_server = [
+                {
+                  ip             = null
+                  is_drs_enabled = false
+                  is_in_use      = true
+                  is_registered  = true
+                  type           = "VCENTER"
+                }
+              ]
+              masquerading_ip       = null
+              masquerading_port     = null
+              name_server_ip_list   = null
+              nfs_subnet_white_list = null
+              ntp_server_ip_list    = null
+              smtp_server           = null
+            }
+          ]
+          nodes          = null
+          tenant_id      = null
+          upgrade_status = null
+          vm_count       = 12
+        }
+      ]
+    }
+  }
+
+  override_data {
+    target = data.nutanix_hosts_v2.hosts[0]
+    values = {
+      host_entities = [
+        {
+          block_model                          = null
+          block_serial                         = null
+          boot_time_usecs                      = null
+          cluster                              = null
+          cluster_ext_id                       = "00000000-0000-0000-0000-0000000000b1"
+          controller_vm                        = null
+          cpu_capacity_hz                      = null
+          cpu_frequency_hz                     = null
+          cpu_model                            = null
+          default_vhd_container_uuid           = null
+          default_vhd_location                 = null
+          default_vm_container_uuid            = null
+          default_vm_location                  = null
+          disk                                 = null
+          ext_id                               = "00000000-0000-0000-0000-0000000000f1"
+          failover_cluster_fqdn                = null
+          failover_cluster_node_status         = null
+          gpu_driver_version                   = null
+          gpu_list                             = null
+          has_csr                              = null
+          host_name                            = "pe-node-01"
+          host_type                            = "HYPER_CONVERGED"
+          hypervisor                           = null
+          ipmi                                 = null
+          is_degraded                          = false
+          is_hardware_virtualized              = false
+          is_reboot_pending                    = false
+          is_secure_booted                     = false
+          key_management_device_to_cert_status = null
+          links                                = null
+          maintenance_state                    = null
+          memory_size_bytes                    = null
+          node_status                          = "NORMAL"
+          number_of_cpu_cores                  = 32
+          number_of_cpu_sockets                = 2
+          number_of_cpu_threads                = 64
+          rackable_unit_uuid                   = null
+          tenant_id                            = null
+        }
+      ]
+    }
+  }
+
+  assert {
+    condition     = output.pe_summary.clusters.total == 1 && output.pe_summary.clusters.names == ["pe-cluster-01"]
+    error_message = "Expected 1 cluster named pe-cluster-01 from mocked cluster inventory"
+  }
+
+  assert {
+    condition     = output.pe_summary.cluster_lifecycle.hosts_discovered == 1
+    error_message = "Expected 1 discovered host from mocked host inventory"
+  }
+
+  assert {
+    condition     = output.recovery_point_replicates["rep1"].cluster_ext_id == "00000000-0000-0000-0000-0000000000b2"
+    error_message = "Expected cluster_ext_id to propagate through nutanix_recovery_point_replicate_v2"
   }
 }

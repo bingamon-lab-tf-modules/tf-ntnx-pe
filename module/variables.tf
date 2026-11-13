@@ -42,6 +42,7 @@ variable "protection_policies" {
         recovery_point_type                           = optional(string) # CRASH_CONSISTENT or APPLICATION_CONSISTENT (APP_CONSISTENT auto-mapped)
         sync_replication_auto_suspend_timeout_seconds = optional(number)
         start_time                                    = optional(string)
+        latest_recovery_point_retention_seconds       = optional(number)
         retention = optional(object({
           linear_retention = optional(object({
             local_retention_count  = optional(number)
